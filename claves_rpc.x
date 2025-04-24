@@ -22,7 +22,7 @@ struct SetArgs {
 
 struct GetResult {
     int status;
-    value1 value1;
+    string value1<256>;
     Vvalue2 vect;
     CoordRPC value3;
 };

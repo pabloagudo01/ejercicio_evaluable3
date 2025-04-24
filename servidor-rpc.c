@@ -20,6 +20,7 @@ int *setvalue_1_svc(SetArgs *args, struct svc_req *rqstp) {
 
 GetResult *getvalue_1_svc(int *key, struct svc_req *rqstp) {
     static GetResult result;
+    memset(&result, 0, sizeof(GetResult)); 
     struct Coord value3;
     result.status = get_value(*key, result.value1, &result.vect.N_value2, result.vect.V_value2, &value3);
     result.value3.x = value3.x;
@@ -46,10 +47,10 @@ int *exist_1_svc(int *key, struct svc_req *rqstp) {
     return &result;
 }
 
-// 🔧 Dispatcher generado por rpcgen
+//Dispatcher generado por rpcgen
 extern void claves_prog_1(struct svc_req *rqstp, register SVCXPRT *transp);
 
-// 🔧 main para registrar y lanzar el servicio
+//main para registrar y lanzar el servicio
 int main() {
     SVCXPRT *transp;
 
