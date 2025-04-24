@@ -1,6 +1,8 @@
+/* claves_rpc.x */
 const MAXLEN = 256;
 const MAXDV = 32;
 
+/* Definir la estructura con un nombre diferente (CoordRPC) */
 struct CoordRPC {
     int x;
     int y;
@@ -17,23 +19,23 @@ struct SetArgs {
     int key;
     value1 value1;
     Vvalue2 vect;
-    CoordRPC value3;
+    CoordRPC value3;  /* Usar CoordRPC */
 };
 
 struct GetResult {
     int status;
-    string value1<256>;
+    value1 value1;
     Vvalue2 vect;
-    CoordRPC value3;
+    CoordRPC value3;  /* Usar CoordRPC */
 };
 
 program CLAVES_PROG {
     version CLAVES_VERS {
-        int DESTROY(void)           = 1;
-        int SETVALUE(SetArgs)       = 2;
-        GetResult GETVALUE(int)     = 3;
-        int MODIFYVALUE(SetArgs)    = 4;
-        int DELETEKEY(int)          = 5;
-        int EXIST(int)              = 6;
+        int DESTROY(void) = 1;
+        int SETVALUE(SetArgs) = 2;
+        GetResult GETVALUE(int) = 3;
+        int MODIFYVALUE(SetArgs) = 4;
+        int DELETEKEY(int) = 5;
+        int EXIST(int) = 6;
     } = 1;
 } = 0x20000001;

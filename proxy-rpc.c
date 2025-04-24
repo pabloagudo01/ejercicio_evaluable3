@@ -8,20 +8,22 @@
 #define TIMEOUT_SEC 25
 static CLIENT *clnt_handle = NULL;
 
-static void init_client()
+/* Inicializa el handle RPC usando la variable de entorno IP_TUPLAS */
+static void init_client(void)
 {
     if (clnt_handle == NULL) {
         char *server_ip = getenv("IP_TUPLAS");
         if (!server_ip) {
-            fprintf(stderr, "[proxy] IP_TUPLAS no definida, usando 127.0.0.1 por defecto\n");
+            fprintf(stderr,
+                "Error: variable de entorno IP_TUPLAS no definida. Usando 127.0.0.1\n");
             server_ip = "127.0.0.1";
-        } else {
-            printf("[proxy] Cliente RPC inicializado con IP_TUPLAS=%s\n", server_ip);
         }
-
-        clnt_handle = clnt_create(server_ip, CLAVES_PROG, CLAVES_VERS, "tcp");
+        clnt_handle = clnt_create(server_ip,
+                                  CLAVES_PROG,
+                                  CLAVES_VERS,
+                                  "udp");
         if (clnt_handle == NULL) {
-            clnt_pcreateerror("[proxy] Error al crear cliente RPC");
+            clnt_pcreateerror("Error al crear cliente RPC");
             exit(1);
         }
     }
@@ -30,12 +32,8 @@ static void init_client()
 int destroy(void)
 {
     init_client();
-    int *result = destroy_1(NULL, clnt_handle);
-    if (!result) {
-        fprintf(stderr, "[proxy] Fallo en destroy RPC\n");
-        return -1;
-    }
-    return *result;
+    int *res = destroy_1(NULL, clnt_handle);
+    return res ? *res : -1;
 }
 
 int set_value(int key, char *value1, int N_value2, double *V_value2, struct Coord value3)
@@ -49,28 +47,26 @@ int set_value(int key, char *value1, int N_value2, double *V_value2, struct Coor
     args.value3.x = value3.x;
     args.value3.y = value3.y;
 
-    int *result = setvalue_1(&args, clnt_handle);
+    int *res = setvalue_1(&args, clnt_handle);
     free(args.value1);
-    if (!result) {
-        fprintf(stderr, "[proxy] Fallo en set_value RPC\n");
-        return -1;
-    }
-    return *result;
+    return res ? *res : -1;
 }
 
 int get_value(int key, char *value1, int *N_value2, double *V_value2, struct Coord *value3)
 {
     init_client();
-    GetResult *result = getvalue_1(&key, clnt_handle);
-    if (!result || result->status != 0) {
-        fprintf(stderr, "[proxy] Fallo en get_value RPC\n");
-        return -1;
-    }
-    strncpy(value1, result->value1, 256);
-    *N_value2 = result->vect.N_value2;
-    memcpy(V_value2, result->vect.V_value2, (*N_value2) * sizeof(double));
-    value3->x = result->value3.x;
-    value3->y = result->value3.y;
+    GetResult *res = getvalue_1(&key, clnt_handle);
+    if (!res || res->status != 0) return -1;
+
+    /* Copiamos la cadena */
+    strncpy(value1, res->value1, 256);
+    /* N.º de elementos */
+    *N_value2 = res->vect.N_value2;
+    /* CORRECCIÓN: campo correcto con guión bajo */
+    memcpy(V_value2, res->vect.V_value2, (*N_value2) * sizeof(double));
+    /* Coordenadas */
+    value3->x = res->value3.x;
+    value3->y = res->value3.y;
     return 0;
 }
 
@@ -85,33 +81,21 @@ int modify_value(int key, char *value1, int N_value2, double *V_value2, struct C
     args.value3.x = value3.x;
     args.value3.y = value3.y;
 
-    int *result = modifyvalue_1(&args, clnt_handle);
+    int *res = modifyvalue_1(&args, clnt_handle);
     free(args.value1);
-    if (!result) {
-        fprintf(stderr, "[proxy] Fallo en modify_value RPC\n");
-        return -1;
-    }
-    return *result;
+    return res ? *res : -1;
 }
 
 int delete_key(int key)
 {
     init_client();
-    int *result = deletekey_1(&key, clnt_handle);
-    if (!result) {
-        fprintf(stderr, "[proxy] Fallo en delete_key RPC\n");
-        return -1;
-    }
-    return *result;
+    int *res = deletekey_1(&key, clnt_handle);
+    return res ? *res : -1;
 }
 
 int exist(int key)
 {
     init_client();
-    int *result = exist_1(&key, clnt_handle);
-    if (!result) {
-        fprintf(stderr, "[proxy] Fallo en exist RPC\n");
-        return -1;
-    }
-    return *result;
+    int *res = exist_1(&key, clnt_handle);
+    return res ? *res : -1;
 }
