@@ -18,10 +18,7 @@ static void init_client(void)
                 "Error: variable de entorno IP_TUPLAS no definida. Usando 127.0.0.1\n");
             server_ip = "127.0.0.1";
         }
-        clnt_handle = clnt_create(server_ip,
-                                  CLAVES_PROG,
-                                  CLAVES_VERS,
-                                  "udp");
+        clnt_handle = clnt_create(server_ip, CLAVES_PROG, CLAVES_VERS, "udp");
         if (clnt_handle == NULL) {
             clnt_pcreateerror("Error al crear cliente RPC");
             exit(1);

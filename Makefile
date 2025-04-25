@@ -19,7 +19,7 @@ SERVER_OBJS = servidor-rpc.o claves_rpc_svc.o claves_rpc_xdr.o
 
 .PHONY: all clean
 
-all: libclaves.so cliente servidor
+all: libclaves.so cliente servidor cliente1
 
 # === Generación de archivos RPC ===
 $(HDR) $(XDR_SRC) $(CLNT_SRC) $(SVC_SRC): $(X_FILE)
@@ -39,7 +39,14 @@ claves.o: claves.c claves.h
 cliente: $(CLIENT_OBJS)
 	$(CC) -o $@ $^ -L. -lclaves -Wl,-rpath,'$$ORIGIN' $(LIBS)
 
+cliente1: app-cliente-1.o proxy-rpc.o claves_rpc_clnt.o claves_rpc_xdr.o
+	$(CC) -o $@ $^ -L. -lclaves -Wl,-rpath,'$$ORIGIN' $(LIBS)
+
+
 app-cliente.o: app-cliente.c claves.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+app-cliente-1.o: app-cliente-1.c claves.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 proxy-rpc.o: proxy-rpc.c claves_rpc.h claves.h

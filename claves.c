@@ -90,8 +90,19 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2, struct Coo
 
     while (actual) {
         if (actual->key == key) {
+            if (actual->N_value2 < 1 || actual->N_value2 > 32) {
+                pthread_mutex_unlock(&mutex);
+                printf("Cl: Error - N_value2 inválido al recuperar clave %d.\n", key);
+                return -1;
+            }
+
             strcpy(value1, actual->value1);
-            *N_value2 = actual->N_value2;
+            if (actual->N_value2 < 1 || actual->N_value2 > 32) {
+                pthread_mutex_unlock(&mutex);
+                printf("Cl: Error - N_value2 inválido (%d) al recuperar clave %d.\n", actual->N_value2, key);
+                return -1;
+            }    
+            *N_value2 = actual->N_value2;        
             memcpy(V_value2, actual->V_value2, actual->N_value2 * sizeof(double));
             *value3 = actual->value3;
             pthread_mutex_unlock(&mutex);
@@ -105,6 +116,7 @@ int get_value(int key, char *value1, int *N_value2, double *V_value2, struct Coo
     printf("Cl: Error - Clave %d no encontrada.\n", key);
     return -1;
 }
+
 
 // **Modifica una tupla existente**
 int modify_value(int key, char *value1, int N_value2, double *V_value2, struct Coord value3) {

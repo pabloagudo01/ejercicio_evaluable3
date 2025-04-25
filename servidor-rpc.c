@@ -4,8 +4,9 @@
 #include <rpc/rpc.h>
 #include <rpc/pmap_clnt.h>
 #include <rpc/xdr.h>
+#include "claves_rpc.h"  // <- debe ir antes que claves.h, porque define GetResult
 #include "claves.h"
-#include "claves_rpc.h"
+
 
 /* Dispatcher generado por rpcgen */
 extern void claves_prog_1(struct svc_req *rqstp, SVCXPRT *transp);
@@ -34,16 +35,22 @@ setvalue_1_svc(SetArgs *args, struct svc_req *rqstp)
     );
     return &result;
 }
-
-GetResult *
-getvalue_1_svc(int *keyp, struct svc_req *rqstp)
-{
+GetResult *getvalue_1_svc(int *keyp, struct svc_req *rqstp){
     static GetResult result;
+    static char buffer_value1[256];  // <-- memoria para value1
+
+    memset(&result, 0, sizeof(GetResult));
+    result.value1 = buffer_value1;
+
+
     struct Coord c;
 
-    // Limpieza preventiva
-    memset(&result, 0, sizeof(GetResult));
-
+    printf("[servidor] getvalue_1_svc: recibida petición para clave %d\n", *keyp);
+    if (!result.value1) {
+        fprintf(stderr, "Error: value1 es NULL antes de get_value\n");
+        exit(1);
+    }
+    
     result.status = get_value(
         *keyp,
         result.value1,
@@ -52,10 +59,18 @@ getvalue_1_svc(int *keyp, struct svc_req *rqstp)
         &c
     );
 
-    result.value3.x = c.x;
-    result.value3.y = c.y;
+    if (result.status == 0) {
+        result.value3.x = c.x;
+        result.value3.y = c.y;
+        printf("[servidor] getvalue_1_svc: clave %d encontrada\n", *keyp);
+    } else {
+        printf("[servidor] getvalue_1_svc: clave %d no encontrada\n", *keyp);
+    }
+
     return &result;
 }
+
+
 
 int *
 modifyvalue_1_svc(SetArgs *args, struct svc_req *rqstp)
@@ -105,22 +120,11 @@ int main(void)
     pmap_unset(CLAVES_PROG, CLAVES_VERS);
 
     /* Crea el transporte UDP */
-    transp = svcudp_create(RPC_ANYSOCK);
-    if (transp == NULL) {
-        fprintf(stderr, "Error: no se pudo crear transporte UDP.\n");
+    transp = svctcp_create(RPC_ANYSOCK, 0, 0);
+    if (!svc_create(claves_prog_1, CLAVES_PROG, CLAVES_VERS, "udp")) {
+        fprintf(stderr, "Error: no se pudo registrar CLAVES_PROG con svc_create.\n");
         exit(1);
     }
-
-    /* Registra el programa con su dispatcher */
-    if (!svc_register(transp,
-                      CLAVES_PROG,
-                      CLAVES_VERS,
-                      claves_prog_1,
-                      IPPROTO_UDP)) {
-        fprintf(stderr, "Error: no se pudo registrar CLAVES_PROG.\n");
-        exit(1);
-    }
-
     printf("[servidor] Esperando peticiones RPC (UDP)...\n");
     svc_run();  /* Bucle principal */
     fprintf(stderr, "Error: svc_run() retornó inesperadamente.\n");
